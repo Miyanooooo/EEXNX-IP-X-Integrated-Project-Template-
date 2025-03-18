@@ -1,4 +1,4 @@
-# LaTeX × TU Delft - Report/Thesis Template
+# LaTeX × TU Delft - Report/Thesis Template (edited for Bsc Electrical Engineering EEXNX (IP-X) Integrated Projects)
 
 This template aims to simplify and improve the (Xe)LaTeX report/thesis template by Delft University of Technology with the following three main design principles:
 
