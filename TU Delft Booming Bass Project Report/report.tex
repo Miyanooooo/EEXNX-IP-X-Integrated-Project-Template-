@@ -1,0 +1,176 @@
+\documentclass{tudelft-report}
+
+%% Set up the bibliography
+\usepackage{biblatex}
+\addbibresource{report.bib}
+
+%% Additional packages and commands
+\usepackage[dvipsnames]{xcolor}
+\usepackage{parskip}
+% \usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{soul}
+\usepackage{biblatex}
+\usepackage{setspace}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{kantlipsum}
+\usepackage{array}
+\usepackage{amsmath}
+\usepackage[para,online,flushleft]{threeparttable}
+\usepackage{pdfpages}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\usepackage[T1]{fontenc}
+\usepackage{wrapfig}
+\usepackage{tabularx}
+\usepackage{tcolorbox}
+\usepackage{titlesec}
+\usepackage{circuitikz}
+\tcbuselibrary{minted, breakable, xparse, skins}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\usepackage{pgfplotstable}
+
+
+
+%shorten hyperref
+\usepackage{ntheorem}
+\usepackage[colorlinks]{hyperref}
+\newcommand*{\shortautoref}[1]{%
+  \begingroup
+    \def\sectionautorefname{Sec.}%
+    \autoref{#1}%
+  \endgroup
+}
+\newcommand*{\seautoref}[1]{%
+  \begingroup
+    \def\equationautorefname{Eq.}%
+    \autoref{#1}%
+  \endgroup
+}
+\newcommand*{\stautoref}[1]{%
+  \begingroup
+    \def\tableautorefname{Tab.}%
+    \autoref{#1}%
+  \endgroup
+}
+
+\newcommand*{\sfautoref}[1]{%
+  \begingroup
+    \def\figureautorefname{Fig.}%
+    \autoref{#1}%
+  \endgroup
+}
+
+\usetikzlibrary{arrows.meta, calc, positioning, quotes}
+\usetikzlibrary{shapes, arrows, positioning}
+
+\definecolor{bg}{gray}{0.95}
+\usepackage{geometry}
+\geometry{margin=1in}
+\usepackage{xfrac}
+\usepackage{minted}
+\usepackage{multirow}
+\usepackage{multicol}
+\setlist{itemsep=-2pt} % Reducing white space in lists slightly
+\renewcommand{\deg}{\si{\degree}\xspace} % Use \deg easily, everywhere
+
+%% ----------------------------------------------------------------------
+%%    Begin of Commands + Short Explanation of the command
+%% ----------------------------------------------------------------------
+
+\makeatletter
+%%% redefine \eqref to be like the original
+\renewcommand{\eqref}[1]{\textup{\eqreftagform@{\ref{#1}}}}
+\let\eqreftagform@\tagform@
+%%% redefine \tagform@
+\def\tagform@#1{%
+  \maketag@@@{%
+    \if@unit(\thiseq@unit)\quad\fi\global\@unitfalse
+    (\ignorespaces#1\unskip\@@italiccorr)%
+  }%
+}
+\newif\if@unit
+\def\equnit#1{%
+  \gdef\thiseq@unit{#1}%
+  \global\@unittrue
+}
+\makeatother
+\newcommand*\varunit[1]{& \llap{\si{[#1]}}&\quad}
+
+
+\tikzstyle{block} = [draw, fill=white, rectangle, 
+    minimum height=3em, minimum width=6em]
+\tikzstyle{input} = [coordinate]
+\tikzstyle{output} = [coordinate]
+\tikzstyle{arrow} = [draw, -latex, thick]
+\tikzstyle{voltarrow} = [draw, -latex, thick]
+
+
+%% ----------------------------------------------------------------------
+%%    Begin of document + Frontmatter (Roman page numbering)
+%% ----------------------------------------------------------------------
+
+\begin{document}
+
+\frontmatter
+
+%% Define the main parameters
+\title{A Title to the Report}
+\subtitle{A Catchy Optional Subtitle \\ that Grabs the Attention}
+\author{\large Supervisor: H.E.J. Bosma (Change accordingly)\\ Teaching Assistant: M. Mihankhah (Change accordingly) \\
+A. Guo (6151701)}
+
+\subject{EEXNX: Integrated Project X} % Cover only
+\affiliation{Delft University of Technology} % Cover only
+\coverimage{figures/ferroblack.jpg} % Aspect ratio of 2:3 (portrait) recommended
+\definecolor{title}{HTML}{4884d6} % Color for cover title
+
+\makecover
+
+\input{frontmatter/title-report}
+\input{frontmatter/preface}
+\input{frontmatter/summary}
+
+\tableofcontents
+%\listoffigures
+%\listoftables
+
+\input{frontmatter/nomenclature}
+
+%% ----------------------------------------------------------------------
+%%    Mainmatter (Arabic page numbering)
+%% ----------------------------------------------------------------------
+
+\mainmatter
+\input{mainmatter/introduction}
+
+\input{mainmatter/DesignMethodologies}
+\input{mainmatter/Simulations}
+\input{mainmatter/Measurements}
+\input{mainmatter/Discussion}
+
+\input{mainmatter/Conclusion}
+
+%% Prevent URLs running into margins in the bibliography
+\setcounter{biburlnumpenalty}{7000}
+\setcounter{biburllcpenalty}{7000}
+\setcounter{biburlucpenalty}{7000}
+
+%% Adds the bibliography
+\printbibliography[heading=bibintoc,title=Bibliography]
+
+%% ----------------------------------------------------------------------
+%%    Appendix (Letters for chapters)
+%% ----------------------------------------------------------------------
+
+\appendix
+
+\input{appendix/appendix-a}
+\input{appendix/appendix-b}
+
+
+
+\end{document}

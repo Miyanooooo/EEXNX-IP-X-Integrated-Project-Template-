@@ -1,0 +1,296 @@
+\chapter{Source Code}
+\label{chapter: Code}
+
+
+\section{Python Script - Ideal Filter Component Values Calculator}
+\begin{lstlisting}[language=Python]
+import numpy as np
+from itertools import product
+
+# Given cutoff frequencies
+f_c1 = 150  # Hz for high-pass
+f_c2 = 1250  # Hz for low-pass
+
+# Component value lists
+capacitor_values = [
+    100e-9, 220e-9, 330e-9, 470e-9, 680e-9, 1e-6, 1.5e-6, 2.2e-6, 2.7e-6, 3.3e-6,
+    3.9e-6, 4.7e-6, 5.6e-6, 6.8e-6, 8.2e-6, 10e-6, 15e-6, 22e-6, 33e-6, 47e-6, 100e-6
+]
+
+inductor_values = [
+    0.15e-3, 0.22e-3, 0.33e-3, 0.47e-3, 0.68e-3, 1e-3, 1.5e-3, 2.2e-3, 3.3e-3, 4.7e-3
+]
+
+# Function to calculate cutoff frequency
+def calculate_cutoff_frequency(L, C):
+    return 1 / (2 * np.pi * np.sqrt(L * C))
+
+# Perform a global search for the best values
+best_high_pass = None
+best_low_pass = None
+best_error = float('inf')
+
+for C_hp, L_hp, C_lp, L_lp in product(capacitor_values, inductor_values, capacitor_values, inductor_values):
+    # Calculate cutoff frequencies for high-pass and low-pass
+    f_c1_calc = calculate_cutoff_frequency(L_hp, C_hp)
+    f_c2_calc = calculate_cutoff_frequency(L_lp, C_lp)
+
+    # Compute the error as the sum of absolute differences
+    error = abs(f_c1 - f_c1_calc) + abs(f_c2 - f_c2_calc)
+
+    # Update best values if error is smaller
+    if error < best_error:
+        best_error = error
+        best_high_pass = (C_hp, L_hp, f_c1_calc)
+        best_low_pass = (C_lp, L_lp, f_c2_calc)
+
+# Output the best results
+print("High-pass filter:")
+print(f"C_hp = {best_high_pass[0]:.2e} F, L_hp = {best_high_pass[1]:.2e} H, f_c1_actual = {best_high_pass[2]:.2f} Hz")
+print("\nLow-pass filter:")
+print(f"C_lp = {best_low_pass[0]:.2e} F, L_lp = {best_low_pass[1]:.2e} H, f_c2_actual = {best_low_pass[2]:.2f} Hz")
+\end{lstlisting}
+\section{Python Script -  BPF (Band-pass Filter) Frequency Response Graph}
+\begin{lstlisting}[language=Python]
+    import numpy as np
+import scipy.signal as signal
+import matplotlib.pyplot as plt
+
+# Function to calculate Q, f0, and Bandwidth (BW) based on given fL and fH
+def calculate_parameters(fL, fH):
+    f0 = np.sqrt(fL * fH)  # Center frequency (f0)
+    BW = fH - fL  # Bandwidth
+    Q = f0 / BW  # Quality factor (Q)
+    return f0, BW, Q
+
+# Calculate LC components for a second-order low-pass filter
+def calculate_LC_components_lowpass(f0, Q):
+    L = Q / (2 * np.pi * f0)  # Inductor value in Henry
+    C = 1 / (2 * np.pi * f0 * L)  # Capacitor value in Farad
+    return L, C
+
+# Calculate LC components for a second-order high-pass filter
+def calculate_LC_components_highpass(f0, Q):
+    C = Q / (2 * np.pi * f0)  # Capacitor value in Farad
+    L = 1 / (2 * np.pi * f0 * C)  # Inductor value in Henry
+    return L, C
+
+# Function to design the second-order low-pass and high-pass filters (analog)
+def design_filters(fL, fH, Q):
+    # Analog low-pass filter transfer function
+    omega_H = 2 * np.pi * fH  # Cutoff angular frequency for low-pass filter
+    b_lp, a_lp = signal.butter(2, omega_H, btype='low', analog=True)  # Butterworth filter
+
+    # Analog high-pass filter transfer function
+    omega_L = 2 * np.pi * fL  # Cutoff angular frequency for high-pass filter
+    b_hp, a_hp = signal.butter(2, omega_L, btype='high', analog=True)  # Butterworth filter
+
+    return b_lp, a_lp, b_hp, a_hp
+
+# Function to plot the combined frequency response of the bandpass filter
+def plot_combined_response(b_lp, a_lp, b_hp, a_hp, fL, fH):
+    # Create a frequency range for plotting (log scale)
+    w, h_hp = signal.freqs(b_hp, a_hp, worN=np.logspace(1, 5, 400))  # Frequency response of HPF
+    _, h_lp = signal.freqs(b_lp, a_lp, worN=w)  # Frequency response of LPF
+
+    # Multiply the high-pass and low-pass responses to get the bandpass response
+    h_bandpass = h_lp * h_hp
+
+    # Plot the bandpass frequency response
+    plt.figure(figsize=(10, 6))
+    plt.semilogx(w, 20 * np.log10(np.abs(h_bandpass)), label='Bandpass Filter Response')
+    plt.title(f"Bandpass Filter Frequency Response (fL={fL} Hz, fH={fH} Hz)")
+    plt.xlabel('Frequency [Hz]')
+    plt.ylabel('Magnitude [dB]')
+    plt.grid(True)
+    plt.legend()
+    plt.show()
+
+# Main function to design and plot the filter
+def main(fL, fH):
+    # Calculate f0, BW, and Q
+    f0, BW, Q = calculate_parameters(fL, fH)
+
+    # Print the calculated parameters
+    print(f"Center frequency (f0): {f0:.2f} Hz")
+    print(f"Bandwidth (BW): {BW:.2f} Hz")
+    print(f"Quality factor (Q): {Q:.2f}")
+
+    # Calculate the LC components for the low-pass filter
+    L_lp, C_lp = calculate_LC_components_lowpass(f0, Q)
+    print(f"Low-pass filter components:")
+    print(f"Inductor (L) for low-pass filter: {L_lp:.6f} H")
+    print(f"Capacitor (C) for low-pass filter: {C_lp:.6e} F")
+
+    # Calculate the LC components for the high-pass filter
+    L_hp, C_hp = calculate_LC_components_highpass(f0, Q)
+    print(f"\nHigh-pass filter components:")
+    print(f"Inductor (L) for high-pass filter: {L_hp:.6f} H")
+    print(f"Capacitor (C) for high-pass filter: {C_hp:.6e} F")
+
+    # Design the low-pass and high-pass filters
+    b_lp, a_lp, b_hp, a_hp = design_filters(fL, fH, Q)
+
+    # Plot the combined frequency response of the bandpass filter
+    plot_combined_response(b_lp, a_lp, b_hp, a_hp, fL, fH)
+
+# Example usage:
+if __name__ == "__main__":
+    fL = 150  # Low-pass cutoff frequency in Hz
+    fH = 1250  # High-pass cutoff frequency in Hz
+    main(fL, fH)
+
+\end{lstlisting}
+
+
+\section{Python - Phase Calculator}
+
+\label{calculation of phase}
+\begin{lstlisting}[language=Python]
+
+def phase_calculation(frequency):
+    f = frequency
+    om = f * 2 * math.pi
+
+    C_1 = 166.5 * (10 ** -9)
+    R_2 = 47000
+    C_a = 4.05 * (10 ** -9)
+    R_a = 987
+    R_b = 81800
+    C_x = 968 * (10 ** -9)
+    R_c = 1.98 * (10 ** 6)
+
+    a = C_1 * R_2
+    b = R_a * C_a
+    d = a * b
+    f = R_b * C_x
+    k = (om ** 2) * a * R_c * C_x
+    t = a+b+f
+    q = (a*f) + k
+    r = (f*(a+b)) + d
+    
+    Re_1 = ((om**4)*q*r) - ((om**2)*q)
+    Re_2 = ((om**2)*a*t)-((om**4)*a*d*f)
+    Re = Re_1 + Re_2
+
+    Im_1 = (om*a) - ((om**3)*a*r)
+    Im_2 = ((om**3)*q*t) - ((om**5)*d*f*q)
+    Im = Im_1 + Im_2
+    phase = np.degrees(np.atan(Im/Re))
+    return phase
+
+\end{lstlisting}
+\newpage
+\section{Python - Ripple and Average Voltage Simulations}
+\label{sec:ripvoltcodesim}
+\begin{lstlisting}[language=Python]
+import pandas as pd
+
+def ripple(avg, max):
+    return (max-avg)/avg*100
+
+
+datas = [(".\\19 ohm.txt",19),
+    	(".\\38 ohm.txt",38),
+    	(".\\76 ohm.txt",76),
+    	(".\\no load.txt",None)]
+
+for data in datas:
+    file = data[0]
+    resistance = data[1]
+    
+    data = pd.read_csv(file, delimiter="\t")
+    #Only take the last part of the simulation to avoid the waveform when the capacitors are still being loaded
+    t = data["time"][len(data["time"])//3*2:]
+    v = data["V(n001)"][len(data["V(n001)"])//3*2:]
+    i = data["I(R2)"][len(data["I(R2)"])//3*2:]
+
+    maxV = v.max()
+    minV = v.min()
+    avgV = (maxV + minV)/2
+    meanI = i.mean()
+    
+    if resistance == None:
+        print(f"Using {file} (Power supply is not loaded)")
+    else:
+        print(f"Using {file} (Power supply is loaded with a {resistance} Ohm resistor)")
+
+    print(f"    Load resistance: {resistance}")   
+    print(f"    Average Voltage: {avgV:.3}V")
+    print(f"    Average Current: {meanI:.3}A")
+    print(f"    Ripple: {ripple(avgV, maxV):.3}%")
+\end{lstlisting}
+
+\section{Python - Ripple and Average Voltage Measurements}
+\label{sec:ripvoltcodemea}
+
+\begin{lstlisting}[language=Python]
+import pandas as pd
+
+def ripple(avg, max):
+    return (max-avg)/avg*100
+# Tuples are formatted as (filename,resistance)
+datas = [(".\\19 ohm\\F0009CH1.CSV",19),
+    	(".\\38 ohm\\F0007CH1.CSV",38),
+    	(".\\76 ohm\\F0011CH1.CSV",76),
+    	(".\\No load\\F0008CH1.CSV",None)]
+for data in datas:
+    file = data[0]
+    resistance = data[1]
+    
+    measured_data = pd.read_csv(file, usecols=[3,4])
+    t = measured_data["d"]
+    v = measured_data["e"]
+
+    maxV = v.max()
+    minV = v.min()
+    avgV = (maxV + minV)/2
+    if resistance == None:
+        print(f"Using {file} (Power supply is not loaded)")
+    else:
+        print(f"Using {file} (Power supply is loaded with a {resistance} Ohm resistor)")
+    print(f"    Load resistance: {resistance}")   
+    print(f"    Average Voltage: {avgV:.3}V")
+    if resistance == None:
+        print(f"    Average Current: 0.00A")
+    else:
+        print(f"    Average Current: {avgV/resistance:.3}A")
+    print(f"    Ripple: {ripple(avgV, maxV):.3}%")
+
+\end{lstlisting}
+
+
+\DeclareTCBListing{mintedbox}{O{}m!O{}}{%
+  breakable=true,
+  listing engine=minted,
+  listing only,
+  minted language=#2,
+  minted style=default,
+  minted options={%
+    linenos,
+    gobble=0,
+    breaklines=true,
+    breakafter=,,
+    fontsize=\small,
+    numbersep=8pt,
+    #1},
+  boxsep=0pt,
+  left skip=0pt,
+  right skip=0pt,
+  left=25pt,
+  right=0pt,
+  top=3pt,
+  bottom=3pt,
+  arc=5pt,
+  leftrule=0pt,
+  rightrule=0pt,
+  bottomrule=2pt,
+  toprule=2pt,
+  colback=bg,
+  colframe=orange!70,
+  enhanced,
+  overlay={%
+    \begin{tcbclipinterior}[h!]
+    \fill[orange!20!white] (frame.south west) rectangle ([xshift=20pt]frame.north west);
+    \end{tcbclipinterior}},
+  #3}
